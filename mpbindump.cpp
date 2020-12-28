@@ -154,6 +154,7 @@ void DecodeZlib(FILE *file, uint8_t *dst, uint32_t len)
     {
         inflateEnd(&stream);
     }
+	delete[] pack_buf;
 }
 
 std::string GetBufExtension(uint8_t *buf)
