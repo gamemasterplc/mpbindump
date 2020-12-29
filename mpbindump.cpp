@@ -242,11 +242,11 @@ int main(int argc, char **argv)
                 break;
 
             case 7:
+				use_zlib = true;
                 DecodeZlib(bin_file, decomp_buf, raw_size);
                 break;
 
             default:
-                use_zlib = true;
                 fread(decomp_buf, 1, raw_size, bin_file);
                 break;
         }
