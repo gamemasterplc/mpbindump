@@ -218,41 +218,46 @@ int main(int argc, char **argv)
     tinyxml2::XMLDocument document;
     tinyxml2::XMLElement *root = document.NewElement("files");
     document.InsertFirstChild(root);
-    bool use_zlib = false;
     for (uint32_t i = 0; i < file_count; i++) {
         tinyxml2::XMLElement *file_element = document.NewElement("file");
         SetSeek(bin_file, file_offsets[i]);
         uint32_t raw_size, comp_type;
+        std::string comp_type_str;
         raw_size = ReadU32(bin_file);
         comp_type = ReadU32(bin_file);
         uint8_t *decomp_buf = new uint8_t[raw_size];
         switch (comp_type) {
             case 1:
+                comp_type_str = "lzss";
                 DecodeLZSS(bin_file, decomp_buf, raw_size);
                 break;
 
             case 2:
             case 3:
             case 4:
+                comp_type_str = "slide";
                 DecodeSlide(bin_file, decomp_buf, raw_size);
                 break;
 
             case 5:
+                comp_type_str = "rle";
                 DecodeRle(bin_file, decomp_buf, raw_size);
                 break;
 
             case 7:
-				use_zlib = true;
+                comp_type_str = "zlib";
                 DecodeZlib(bin_file, decomp_buf, raw_size);
                 break;
 
             default:
+                comp_type_str = "none";
                 fread(decomp_buf, 1, raw_size, bin_file);
                 break;
         }
         std::string buf_extension = GetBufExtension(decomp_buf);
         std::string file_id = "file" + std::to_string(i) + "_" + buf_extension;
         file_element->SetAttribute("id", file_id.c_str());
+        file_element->SetAttribute("compress_type", comp_type_str.c_str());
         std::string xml_path = out_name + "\\" + "file" + std::to_string(i) + "." + buf_extension;
         file_element->SetAttribute("path", xml_path.c_str());
         std::string new_file_name = create_dir+"file"+std::to_string(i) + "." + buf_extension;
@@ -265,7 +270,6 @@ int main(int argc, char **argv)
         fclose(new_file);
         delete[] decomp_buf;
     }
-    root->SetAttribute("use_zlib", use_zlib);
     std::string out_xml = out_dir + "\\" + out_name + ".xml";
     document.SaveFile(out_xml.c_str());
     delete[] file_offsets;
